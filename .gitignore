@@ -2,6 +2,7 @@
 /logs
 /data
 .env
+dock.env
 /.project
 .docker-sync
 /jenkins/jenkins_home
@@ -25,3 +26,6 @@
 docker-compose.custom.yml
 
 .DS_Store
+dock1.yml
+docker-compose-template.yml
+.env
