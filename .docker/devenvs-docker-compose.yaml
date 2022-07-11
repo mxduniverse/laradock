@@ -1,0 +1,937 @@
+name: laradock-infallible_joliot
+services:
+  adminer:
+    build:
+      context: D:\VSCode\products\laradock\adminer
+      dockerfile: Dockerfile
+      args:
+        INSTALL_MSSQL: "false"
+    depends_on:
+      php-fpm:
+        condition: service_started
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+      ADMINER_DESIGN: pepa-linha
+      ADMINER_PLUGINS: ""
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+      frontend: null
+    ports:
+    - mode: ingress
+      target: 8080
+      published: "8088"
+      protocol: tcp
+  apache2:
+    build:
+      context: D:\VSCode\products\laradock\apache2
+      dockerfile: Dockerfile
+      args:
+        APACHE_INSTALL_HTTP2: "false"
+        DOCUMENT_ROOT: /var/www/
+        PHP_UPSTREAM_CONTAINER: php-fpm
+        PHP_UPSTREAM_PORT: "9000"
+        PHP_UPSTREAM_TIMEOUT: "60"
+    command:
+    - infinity
+    depends_on:
+      php-fpm:
+        condition: service_started
+    entrypoint:
+    - sleep
+    init: true
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.container: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+      frontend: null
+    ports:
+    - mode: ingress
+      target: 80
+      published: "80"
+      protocol: tcp
+    - mode: ingress
+      target: 443
+      published: "443"
+      protocol: tcp
+    stop_signal: SIGKILL
+    volumes:
+    - type: bind
+      source: D:\VSCode\products
+      target: /var/www
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products\laradock\logs\apache2
+      target: /var/log/apache2
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products\laradock\apache2\sites
+      target: /etc/apache2/sites-available
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products\laradock\apache2\ssl
+      target: /etc/apache2/ssl
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products\laradock
+      target: /com.docker.devenvironments.code
+    - type: volume
+      source: vsCodeServerVolume-laradock-infallible_joliot-apache2
+      target: /home/vscode
+  certbot:
+    build:
+      context: D:\VSCode\products\laradock\certbot
+      dockerfile: Dockerfile
+    environment:
+      CN: '"fake.domain.com"'
+      EMAIL: '"fake.email@gmail.com"'
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      frontend: null
+    volumes:
+    - type: bind
+      source: D:\VSCode\products\laradock\data\certbot\certs
+      target: /var/certs
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products\laradock\certbot\letsencrypt
+      target: /var/www/letsencrypt
+      bind:
+        create_host_path: true
+  docker-in-docker:
+    environment:
+      DOCKER_TLS_SAN: DNS:docker-in-docker
+    expose:
+    - "2375"
+    image: docker:20.10-dind
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    privileged: true
+    volumes:
+    - type: bind
+      source: D:\VSCode\products
+      target: /var/www
+      bind:
+        create_host_path: true
+    - type: volume
+      source: docker-in-docker
+      target: /certs/client
+      volume: {}
+  laravel-echo-server:
+    build:
+      context: D:\VSCode\products\laradock\laravel-echo-server
+      dockerfile: Dockerfile
+      args:
+        CHANGE_SOURCE: "false"
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    links:
+    - redis
+    networks:
+      backend: null
+      frontend: null
+    ports:
+    - mode: ingress
+      target: 6001
+      published: "6001"
+      protocol: tcp
+    volumes:
+    - type: bind
+      source: D:\VSCode\products\laradock\laravel-echo-server\laravel-echo-server.json
+      target: /app/laravel-echo-server.json
+      read_only: true
+      bind:
+        create_host_path: true
+  laravel-horizon:
+    build:
+      context: D:\VSCode\products\laradock\laravel-horizon
+      dockerfile: Dockerfile
+      args:
+        CHANGE_SOURCE: "false"
+        IMAGEMAGICK_VERSION: latest
+        INSTALL_AUDIOWAVEFORM: "false"
+        INSTALL_BCMATH: "true"
+        INSTALL_BZ2: "false"
+        INSTALL_CASSANDRA: "false"
+        INSTALL_FFMPEG: "false"
+        INSTALL_GD: "false"
+        INSTALL_GMP: "false"
+        INSTALL_GNUPG: "false"
+        INSTALL_IMAGEMAGICK: "false"
+        INSTALL_LDAP: "false"
+        INSTALL_MEMCACHED: "false"
+        INSTALL_MONGO: "false"
+        INSTALL_PGSQL: "false"
+        INSTALL_PHPREDIS: "false"
+        INSTALL_SOCKETS: "false"
+        INSTALL_YAML: "false"
+        INSTALL_ZIP_ARCHIVE: "false"
+        LARADOCK_PHP_VERSION: "8.0"
+        PGID: "1000"
+        PUID: "1000"
+    depends_on:
+      workspace:
+        condition: service_started
+    extra_hosts:
+      dockerhost: 10.0.75.1
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    volumes:
+    - type: bind
+      source: D:\VSCode\products
+      target: /var/www
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products\laradock\laravel-horizon\supervisord.d
+      target: /etc/supervisord.d
+      bind:
+        create_host_path: true
+  mailhog:
+    build:
+      context: D:\VSCode\products\laradock\mailhog
+      dockerfile: Dockerfile
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+      frontend: null
+    ports:
+    - mode: ingress
+      target: 1025
+      published: "1025"
+      protocol: tcp
+    - mode: ingress
+      target: 8025
+      published: "8025"
+      protocol: tcp
+  mariadb:
+    build:
+      context: D:\VSCode\products\laradock\mariadb
+      dockerfile: Dockerfile
+      args:
+        MARIADB_VERSION: latest
+        http_proxy: null
+        https_proxy: null
+        no_proxy: null
+    environment:
+      MYSQL_DATABASE: default
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: default
+      TZ: UTC
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    ports:
+    - mode: ingress
+      target: 3308
+      published: "3308"
+      protocol: tcp
+    volumes:
+    - type: bind
+      source: /home/mxadmin/.laradock/data/mariadb
+      target: /var/lib/mysql
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products\laradock\mariadb\docker-entrypoint-initdb.d
+      target: /docker-entrypoint-initdb.d
+      bind:
+        create_host_path: true
+  memcached:
+    build:
+      context: D:\VSCode\products\laradock\memcached
+      dockerfile: Dockerfile
+    depends_on:
+      php-fpm:
+        condition: service_started
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    ports:
+    - mode: ingress
+      target: 11211
+      published: "11211"
+      protocol: tcp
+    volumes:
+    - type: bind
+      source: /home/mxadmin/.laradock/data/memcached
+      target: /var/lib/memcached
+      bind:
+        create_host_path: true
+  mssql:
+    build:
+      context: D:\VSCode\products\laradock\mssql
+      dockerfile: Dockerfile
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_DATABASE: master
+      MSSQL_PID: Express
+      SA_PASSWORD: yourStrong(!)Password
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    ports:
+    - mode: ingress
+      target: 1433
+      published: "1433"
+      protocol: tcp
+    volumes:
+    - type: volume
+      source: mssql
+      target: /var/opt/mssql
+      volume: {}
+  mysql:
+    build:
+      context: D:\VSCode\products\laradock\mysql
+      dockerfile: Dockerfile
+      args:
+        MYSQL_VERSION: latest
+    environment:
+      MYSQL_DATABASE: default
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: default
+      TZ: UTC
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    ports:
+    - mode: ingress
+      target: 3306
+      published: "3306"
+      protocol: tcp
+    volumes:
+    - type: bind
+      source: /home/mxadmin/.laradock/data/mysql
+      target: /var/lib/mysql
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products\laradock\mysql\docker-entrypoint-initdb.d
+      target: /docker-entrypoint-initdb.d
+      bind:
+        create_host_path: true
+  php-fpm:
+    build:
+      context: D:\VSCode\products\laradock\php-fpm
+      dockerfile: Dockerfile
+      args:
+        ADDITIONAL_LOCALES: en_US.UTF-8 es_ES.UTF-8 fr_FR.UTF-8
+        BASE_IMAGE_TAG_PREFIX: latest
+        CHANGE_SOURCE: "false"
+        DOWNGRADE_OPENSSL_TLS_AND_SECLEVEL: "false"
+        IMAGEMAGICK_VERSION: latest
+        INSTALL_ADDITIONAL_LOCALES: "false"
+        INSTALL_AEROSPIKE: "false"
+        INSTALL_AMQP: "false"
+        INSTALL_APCU: "false"
+        INSTALL_AUDIOWAVEFORM: "false"
+        INSTALL_BCMATH: "true"
+        INSTALL_BLACKFIRE: "false"
+        INSTALL_BZ2: "false"
+        INSTALL_CACHETOOL: "false"
+        INSTALL_CALENDAR: "false"
+        INSTALL_CASSANDRA: "false"
+        INSTALL_DOCKER_CLIENT: "false"
+        INSTALL_ENCHANT: "false"
+        INSTALL_EXIF: "false"
+        INSTALL_FAKETIME: "false"
+        INSTALL_FFMPEG: "false"
+        INSTALL_GEARMAN: "false"
+        INSTALL_GETTEXT: "false"
+        INSTALL_GHOSTSCRIPT: "false"
+        INSTALL_GMP: "false"
+        INSTALL_GNUPG: "false"
+        INSTALL_IMAGE_OPTIMIZERS: "true"
+        INSTALL_IMAGEMAGICK: "true"
+        INSTALL_IMAP: "false"
+        INSTALL_INTL: "true"
+        INSTALL_IONCUBE: "false"
+        INSTALL_LDAP: "false"
+        INSTALL_MAILPARSE: "false"
+        INSTALL_MEMCACHED: "false"
+        INSTALL_MONGO: "false"
+        INSTALL_MSSQL: "false"
+        INSTALL_MYSQL_CLIENT: "false"
+        INSTALL_MYSQLI: "true"
+        INSTALL_OCI8: "false"
+        INSTALL_OPCACHE: "true"
+        INSTALL_PCNTL: "false"
+        INSTALL_PCOV: "false"
+        INSTALL_PG_CLIENT: "false"
+        INSTALL_PGSQL: "false"
+        INSTALL_PHALCON: "false"
+        INSTALL_PHPDBG: "false"
+        INSTALL_PHPDECIMAL: "false"
+        INSTALL_PHPREDIS: "true"
+        INSTALL_PING: "false"
+        INSTALL_POSTGIS: "false"
+        INSTALL_RDKAFKA: "false"
+        INSTALL_SMB: "false"
+        INSTALL_SOAP: "false"
+        INSTALL_SSDB: "false"
+        INSTALL_SSH2: "false"
+        INSTALL_SSHPASS: "false"
+        INSTALL_SWOOLE: "false"
+        INSTALL_TAINT: "false"
+        INSTALL_TRADER: "false"
+        INSTALL_WKHTMLTOPDF: "false"
+        INSTALL_XDEBUG: "false"
+        INSTALL_XHPROF: "false"
+        INSTALL_XLSWRITER: "false"
+        INSTALL_XMLRPC: "false"
+        INSTALL_XSL: "false"
+        INSTALL_YAML: "false"
+        INSTALL_ZMQ: "false"
+        INSTALL_ZOOKEEPER: "false"
+        LARADOCK_PHALCON_VERSION: 4.0.5
+        LARADOCK_PHP_VERSION: "8.0"
+        LOCALE: POSIX
+        PGID: "1000"
+        PHP_FPM_NEW_RELIC: "false"
+        PHP_FPM_NEW_RELIC_APP_NAME: app_name
+        PHP_FPM_NEW_RELIC_KEY: "0000"
+        PUID: "1000"
+        http_proxy: null
+        https_proxy: null
+        no_proxy: null
+    depends_on:
+      workspace:
+        condition: service_started
+    environment:
+      DOCKER_CERT_PATH: /certs/client
+      DOCKER_HOST: tcp://docker-in-docker:2376
+      DOCKER_TLS_CERTDIR: /certs
+      DOCKER_TLS_VERIFY: "1"
+      FAKETIME: "-0"
+      PHP_IDE_CONFIG: serverName=laradock
+    expose:
+    - "9000"
+    extra_hosts:
+      dockerhost: 10.0.75.1
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    ports:
+    - mode: ingress
+      target: 9003
+      published: "9003"
+      protocol: tcp
+    volumes:
+    - type: bind
+      source: D:\VSCode\products\laradock\php-fpm\php8.0.ini
+      target: /usr/local/etc/php/php.ini
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products
+      target: /var/www
+      bind:
+        create_host_path: true
+    - type: volume
+      source: docker-in-docker
+      target: /certs/client
+      volume: {}
+  php-worker:
+    build:
+      context: D:\VSCode\products\laradock\php-worker
+      dockerfile: Dockerfile
+      args:
+        CHANGE_SOURCE: "false"
+        IMAGEMAGICK_VERSION: latest
+        INSTALL_AMQP: "false"
+        INSTALL_AUDIOWAVEFORM: "false"
+        INSTALL_BCMATH: "false"
+        INSTALL_BZ2: "false"
+        INSTALL_CASSANDRA: "false"
+        INSTALL_FFMPEG: "false"
+        INSTALL_GD: "false"
+        INSTALL_GEARMAN: "false"
+        INSTALL_GHOSTSCRIPT: "false"
+        INSTALL_GMP: "false"
+        INSTALL_GNUPG: "false"
+        INSTALL_IMAGEMAGICK: "false"
+        INSTALL_IMAP: "false"
+        INSTALL_LDAP: "false"
+        INSTALL_MEMCACHED: "false"
+        INSTALL_MONGO: "false"
+        INSTALL_MSSQL: "false"
+        INSTALL_MYSQL_CLIENT: "false"
+        INSTALL_OCI8: "false"
+        INSTALL_PGSQL: "false"
+        INSTALL_PHALCON: "false"
+        INSTALL_REDIS: "false"
+        INSTALL_SOAP: "false"
+        INSTALL_SSDB: "false"
+        INSTALL_SWOOLE: "false"
+        INSTALL_TAINT: "false"
+        INSTALL_XLSWRITER: "false"
+        INSTALL_XMLRPC: "false"
+        INSTALL_ZIP_ARCHIVE: "false"
+        LARADOCK_PHP_VERSION: "8.0"
+        PGID: "1000"
+        PHALCON_VERSION: 4.0.5
+        PUID: "1000"
+    depends_on:
+      workspace:
+        condition: service_started
+    extra_hosts:
+      dockerhost: 10.0.75.1
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    volumes:
+    - type: bind
+      source: D:\VSCode\products
+      target: /var/www
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products\laradock\php-worker\supervisord.d
+      target: /etc/supervisord.d
+      bind:
+        create_host_path: true
+  phpmyadmin:
+    build:
+      context: D:\VSCode\products\laradock\phpmyadmin
+      dockerfile: Dockerfile
+    depends_on:
+      mysql:
+        condition: service_started
+    environment:
+      MAX_EXECUTION_TIME: "600"
+      MEMORY_LIMIT: 256M
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_USER: default
+      PMA_ARBITRARY: "1"
+      UPLOAD_LIMIT: 2G
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+      frontend: null
+    ports:
+    - mode: ingress
+      target: 80
+      published: "8081"
+      protocol: tcp
+  redis:
+    build:
+      context: D:\VSCode\products\laradock\redis
+      dockerfile: Dockerfile
+    command:
+    - --requirepass
+    - secret_redis
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    ports:
+    - mode: ingress
+      target: 6379
+      published: "6379"
+      protocol: tcp
+    volumes:
+    - type: bind
+      source: C:\Users\Lilith\.laradock\data\redis
+      target: /data
+      bind:
+        create_host_path: true
+  redis-cluster:
+    build:
+      context: D:\VSCode\products\laradock\redis-cluster
+      dockerfile: Dockerfile
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    ports:
+    - mode: ingress
+      target: 7000
+      published: "7000"
+      protocol: tcp
+    - mode: ingress
+      target: 7001
+      published: "7001"
+      protocol: tcp
+    - mode: ingress
+      target: 7002
+      published: "7002"
+      protocol: tcp
+    - mode: ingress
+      target: 7003
+      published: "7003"
+      protocol: tcp
+    - mode: ingress
+      target: 7004
+      published: "7004"
+      protocol: tcp
+    - mode: ingress
+      target: 7005
+      published: "7005"
+      protocol: tcp
+  redis-webui:
+    build:
+      context: D:\VSCode\products\laradock\redis-webui
+      dockerfile: Dockerfile
+    depends_on:
+      redis:
+        condition: service_started
+    environment:
+      ADMIN_PASS: laradock
+      ADMIN_USER: laradock
+      REDIS_1_HOST: redis
+      REDIS_1_PORT: "6379"
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    ports:
+    - mode: ingress
+      target: 80
+      published: "9987"
+      protocol: tcp
+  swagger-editor:
+    build:
+      context: D:\VSCode\products\laradock\swagger-editor
+      dockerfile: Dockerfile
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    ports:
+    - mode: ingress
+      target: 8080
+      published: "5151"
+      protocol: tcp
+  swagger-ui:
+    build:
+      context: D:\VSCode\products\laradock\swagger-ui
+      dockerfile: Dockerfile
+    environment:
+      API_URL: http://generator.swagger.io/api/swagger.json
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    networks:
+      backend: null
+    ports:
+    - mode: ingress
+      target: 8080
+      published: "5555"
+      protocol: tcp
+  workspace:
+    build:
+      context: D:\VSCode\products\laradock\workspace
+      dockerfile: Dockerfile
+      args:
+        AST_VERSION: 1.0.10
+        BASE_IMAGE_TAG_PREFIX: latest
+        BLACKFIRE_CLIENT_ID: <client_id>
+        BLACKFIRE_CLIENT_TOKEN: <client_token>
+        CHANGE_SOURCE: "false"
+        CHROME_DRIVER_VERSION: "2.42"
+        COMPOSER_AUTH_JSON: "false"
+        COMPOSER_GLOBAL_INSTALL: "true"
+        COMPOSER_REPO_PACKAGIST: ""
+        COMPOSER_VERSION: "2"
+        DRUSH_VERSION: 8.4.6
+        IMAGEMAGICK_VERSION: latest
+        INSTALL_AEROSPIKE: "false"
+        INSTALL_AMQP: "false"
+        INSTALL_AST: "true"
+        INSTALL_AUDIOWAVEFORM: "false"
+        INSTALL_BLACKFIRE: "false"
+        INSTALL_BZ2: "false"
+        INSTALL_CASSANDRA: "false"
+        INSTALL_DEPLOYER: "false"
+        INSTALL_DOCKER_CLIENT: "false"
+        INSTALL_DRUPAL_CONSOLE: "false"
+        INSTALL_DRUSH: "false"
+        INSTALL_DUSK_DEPS: "false"
+        INSTALL_FFMPEG: "false"
+        INSTALL_FSWATCH: "false"
+        INSTALL_GEARMAN: "false"
+        INSTALL_GIT_PROMPT: "false"
+        INSTALL_GMP: "false"
+        INSTALL_GNU_PARALLEL: "false"
+        INSTALL_GNUPG: "false"
+        INSTALL_GRAPHVIZ: "false"
+        INSTALL_IMAGE_OPTIMIZERS: "false"
+        INSTALL_IMAGEMAGICK: "false"
+        INSTALL_IMAP: "false"
+        INSTALL_INOTIFY: "false"
+        INSTALL_IONCUBE: "false"
+        INSTALL_LARAVEL_ENVOY: "false"
+        INSTALL_LARAVEL_INSTALLER: "false"
+        INSTALL_LDAP: "false"
+        INSTALL_LIBPNG: "false"
+        INSTALL_LINUXBREW: "false"
+        INSTALL_LNAV: "false"
+        INSTALL_MAILPARSE: "false"
+        INSTALL_MC: "false"
+        INSTALL_MEMCACHED: "true"
+        INSTALL_MONGO: "false"
+        INSTALL_MSSQL: "false"
+        INSTALL_MYSQL_CLIENT: "false"
+        INSTALL_NODE: "true"
+        INSTALL_NPM_ANGULAR_CLI: "false"
+        INSTALL_NPM_BOWER: "false"
+        INSTALL_NPM_GULP: "true"
+        INSTALL_NPM_VUE_CLI: "true"
+        INSTALL_OCI8: "false"
+        INSTALL_PCOV: "false"
+        INSTALL_PG_CLIENT: "false"
+        INSTALL_PHALCON: "false"
+        INSTALL_PHPDBG: "false"
+        INSTALL_PHPDECIMAL: "false"
+        INSTALL_PHPREDIS: "true"
+        INSTALL_PING: "false"
+        INSTALL_PNPM: "false"
+        INSTALL_POWERLINE: "false"
+        INSTALL_PRESTISSIMO: "false"
+        INSTALL_PROTOC: "false"
+        INSTALL_PYTHON: "false"
+        INSTALL_PYTHON3: "false"
+        INSTALL_RDKAFKA: "false"
+        INSTALL_SMB: "false"
+        INSTALL_SOAP: "false"
+        INSTALL_SSDB: "false"
+        INSTALL_SSH2: "false"
+        INSTALL_SSHPASS: "false"
+        INSTALL_SUBVERSION: "false"
+        INSTALL_SUPERVISOR: "false"
+        INSTALL_SWOOLE: "false"
+        INSTALL_SYMFONY: "false"
+        INSTALL_TAINT: "false"
+        INSTALL_TERRAFORM: "false"
+        INSTALL_TRADER: "false"
+        INSTALL_V8JS: "false"
+        INSTALL_WKHTMLTOPDF: "false"
+        INSTALL_WORKSPACE_SSH: "false"
+        INSTALL_WP_CLI: "false"
+        INSTALL_XDEBUG: "false"
+        INSTALL_XLSWRITER: "false"
+        INSTALL_XMLRPC: "false"
+        INSTALL_XSL: "false"
+        INSTALL_YAML: "false"
+        INSTALL_YARN: "true"
+        INSTALL_ZMQ: "false"
+        INSTALL_ZOOKEEPER: "false"
+        LARADOCK_PHALCON_VERSION: 4.0.5
+        LARADOCK_PHP_VERSION: "8.0"
+        NODE_VERSION: node
+        NPM_FETCH_RETRIES: "2"
+        NPM_FETCH_RETRY_FACTOR: "10"
+        NPM_FETCH_RETRY_MAXTIMEOUT: "60000"
+        NPM_FETCH_RETRY_MINTIMEOUT: "10000"
+        NPM_REGISTRY: ""
+        NVM_NODEJS_ORG_MIRROR: ""
+        PGID: "1000"
+        PROTOC_VERSION: latest
+        PUID: "1000"
+        SHELL_OH_MY_ZSH: "false"
+        SHELL_OH_MY_ZSH_ALIASES: "false"
+        SHELL_OH_MY_ZSH_AUTOSUGESTIONS: "false"
+        TZ: UTC
+        YARN_VERSION: latest
+        http_proxy: null
+        https_proxy: null
+        no_proxy: null
+    command:
+    - infinity
+    entrypoint:
+    - sleep
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      DOCKER_CERT_PATH: /certs/client
+      DOCKER_HOST: tcp://docker-in-docker:2376
+      DOCKER_TLS_CERTDIR: /certs
+      DOCKER_TLS_VERIFY: "1"
+      PHP_IDE_CONFIG: serverName=laradock
+    extra_hosts:
+      dockerhost: 10.0.75.1
+    init: true
+    labels:
+      com.docker.devenvironments.compose: "true"
+      com.docker.devenvironments.compose.build: "true"
+      com.docker.devenvironments.container: "true"
+      com.docker.devenvironments.name: laradock-infallible_joliot
+    links:
+    - docker-in-docker
+    networks:
+      backend: null
+      frontend: null
+    ports:
+    - mode: ingress
+      target: 22
+      published: "2222"
+      protocol: tcp
+    - mode: ingress
+      target: 3000
+      published: "3000"
+      protocol: tcp
+    - mode: ingress
+      target: 3001
+      published: "3001"
+      protocol: tcp
+    - mode: ingress
+      target: 8080
+      published: "8080"
+      protocol: tcp
+    - mode: ingress
+      target: 8000
+      published: "8001"
+      protocol: tcp
+    - mode: ingress
+      target: 4200
+      published: "4200"
+      protocol: tcp
+    stop_signal: SIGKILL
+    tty: true
+    volumes:
+    - type: bind
+      source: D:\VSCode\products
+      target: /var/www
+      bind:
+        create_host_path: true
+    - type: volume
+      source: docker-in-docker
+      target: /certs/client
+      volume: {}
+    - type: bind
+      source: D:\VSCode\products\laradock\php-worker\supervisord.d
+      target: /etc/supervisord.d
+      bind:
+        create_host_path: true
+    - type: bind
+      source: D:\VSCode\products\laradock
+      target: /com.docker.devenvironments.code
+    - type: volume
+      source: vsCodeServerVolume-laradock-infallible_joliot-workspace
+      target: /home/vscode
+networks:
+  backend:
+    name: laradock-infallible_joliot_backend
+    driver: bridge
+  default:
+    name: laradock-infallible_joliot_default
+  frontend:
+    name: laradock-infallible_joliot_frontend
+    driver: bridge
+volumes:
+  adminer:
+    name: laradock-infallible_joliot_adminer
+    driver: local
+  cassandra:
+    name: laradock-infallible_joliot_cassandra
+    driver: local
+  confluence:
+    name: laradock-infallible_joliot_confluence
+    driver: local
+  docker-in-docker:
+    name: laradock-infallible_joliot_docker-in-docker
+    driver: local
+  graylog:
+    name: laradock-infallible_joliot_graylog
+    driver: local
+  mariadb:
+    name: laradock-infallible_joliot_mariadb
+    driver: local
+  memcached:
+    name: laradock-infallible_joliot_memcached
+    driver: local
+  minio:
+    name: laradock-infallible_joliot_minio
+    driver: local
+  mongo:
+    name: laradock-infallible_joliot_mongo
+    driver: local
+  mssql:
+    name: laradock-infallible_joliot_mssql
+    driver: local
+  mysql:
+    name: laradock-infallible_joliot_mysql
+    driver: local
+  neo4j:
+    name: laradock-infallible_joliot_neo4j
+    driver: local
+  percona:
+    name: laradock-infallible_joliot_percona
+    driver: local
+  phpmyadmin:
+    name: laradock-infallible_joliot_phpmyadmin
+    driver: local
+  postgres:
+    name: laradock-infallible_joliot_postgres
+    driver: local
+  redis:
+    name: laradock-infallible_joliot_redis
+    driver: local
+  rethinkdb:
+    name: laradock-infallible_joliot_rethinkdb
+    driver: local
+  sonarqube:
+    name: laradock-infallible_joliot_sonarqube
+    driver: local
+  vsCodeServerVolume-laradock-infallible_joliot-apache2:
+    name: vsCodeServerVolume-laradock-infallible_joliot-apache2
+  vsCodeServerVolume-laradock-infallible_joliot-workspace:
+    name: vsCodeServerVolume-laradock-infallible_joliot-workspace
